@@ -7,7 +7,9 @@
         public decimal TaxAmountApplied { 
             get
             {
-                return Math.Round(TaxRateApplied * PriceBeforeTax, 2, MidpointRounding.AwayFromZero);
+                decimal d = Math.Round(TaxRateApplied * PriceBeforeTax, 2, MidpointRounding.AwayFromZero);
+                decimal remainderToClosest = d % 0.05M;
+                return (remainderToClosest < 0.03M) ? (d - remainderToClosest) : (d + 0.05M - remainderToClosest);
             }
         }
 

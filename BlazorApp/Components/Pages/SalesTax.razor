@@ -1,19 +1,124 @@
 ﻿@page "/salestax"
+@using BlazorApp.Data
+@using BlazorApp.Services
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
 @rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject TaxCalculatorService taxCalculator
 
 <PageTitle>Sales Tax Calculator</PageTitle>
 
 <h1>Sales Tax Calculator</h1>
 
-<p role="status">Current count: @currentCount</p>
+@if (GoodsItems == null)
+{
+    <p><em>Loading...</em></p>
+} else
+{
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+    <EditForm Model="NewGoodsItem" OnValidSubmit="Submit" FormName="goodsItemForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div>
+            <label>
+                Item Type:
+                <InputSelect @bind-Value="NewGoodsItem!.Type">
+                    @foreach (ItemType item in Enum.GetValues<ItemType>())
+                    {
+                        <option value="@item">
+                            @GetDisplayName(item)
+                        </option>
+                    }
+                </InputSelect>
+            </label>
+        </div>
+        <div>
+            <label>
+                Is it imported?
+                <InputSelect @bind-Value="NewGoodsItem!.ImportStatus">
+                    @foreach (ImportStatus item in Enum.GetValues<ImportStatus>())
+                    {
+                        <option value="@item">
+                            @GetDisplayName(item)
+                        </option>
+                    }
+                </InputSelect>
+            </label>
+        </div>
+        <div>
+            <label>
+                Price before tax:
+                <InputNumber @bind-Value="NewGoodsItem!.PriceBeforeTax">
+                </InputNumber>
+            </label>
+        </div>
+        <div>
+            <button type="submit">Submit</button>
+        </div>
+    </EditForm>
+
+    <h3>Inputs:</h3>
+    @foreach (var itemGroup in GoodsItems.ItemsPurchased.GroupBy(tItem => (tItem.Type, tItem.ImportStatus)))
+    {
+        <div class="row p-3">
+            Item:
+            <br />
+            @itemGroup.Count() @(itemGroup.Key.ImportStatus == ImportStatus.Imported ? "Imported" : string.Empty) 
+            @GetDisplayName(itemGroup.Key.Type) : @itemGroup.Select(i => i.PriceBeforeTax).Sum()
+        </div>
+    }
+
+    <h3>Outputs:</h3>
+    @foreach (var itemGroup in GoodsItems.ItemsPurchased.GroupBy(tItem => (tItem.Type, tItem.ImportStatus)))
+    {
+        <div class="row p-3">
+            Item:
+            <br />
+            @itemGroup.Count() @(itemGroup.Key.ImportStatus == ImportStatus.Imported ? "Imported" : string.Empty)
+            @GetDisplayName(itemGroup.Key.Type) : @itemGroup.Select(i => i.PriceAfterTax).Sum()
+        </div>
+    }
+    <div class="p-3">
+        Sales tax: @GoodsItems.TotalTaxApplied
+        <br />
+        Total: @GoodsItems.TotalPriceAfterTax
+    </div>
+}
 
 @code {
-    private int currentCount = 0;
 
-    private void IncrementCount()
+    private Receipt? GoodsItems { get; set; }
+
+    [SupplyParameterFromForm]
+    private GoodsItem? NewGoodsItem { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
-        currentCount++;
+        GoodsItems ??= new()
+        {
+            ItemsPurchased = new List<TaxedGoodsItem>()
+        };
+        NewGoodsItem ??= new();
+    }
+
+    private class WeatherForecast
+    {
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public string? Summary { get; set; }
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+
+    private void Submit()
+    {
+        GoodsItems.ItemsPurchased.Add(taxCalculator.ConvertToTaxedItem(NewGoodsItem));
+        NewGoodsItem = new();
+    }
+
+    private string GetDisplayName(Enum e)
+    {
+        return e.GetType().GetMember(e.ToString()).First().GetCustomAttribute<DisplayAttribute>().Name;
     }
 }
+
