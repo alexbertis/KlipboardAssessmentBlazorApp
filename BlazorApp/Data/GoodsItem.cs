@@ -2,8 +2,7 @@
 {
     public class GoodsItem
     {
-
-        public required string Name { get; set; }
+        public ItemType Type { get; set; }
 
         public ImportStatus ImportStatus { get; set; }
 
