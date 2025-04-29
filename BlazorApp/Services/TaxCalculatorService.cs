@@ -7,7 +7,7 @@ namespace BlazorApp.Services
 
         private static readonly ItemType[] ExemptGoods = { ItemType.Book, ItemType.ChocolateBar, ItemType.ChocolateBox, ItemType.Paracetamol };
 
-        public decimal CalculateTaxRate(GoodsItem item)
+        public decimal CalculateTaxAmount(GoodsItem item)
         {
             ArgumentNullException.ThrowIfNull(item);
             if (item.ImportStatus == ImportStatus.Unknown)
@@ -15,20 +15,30 @@ namespace BlazorApp.Services
                 throw new ArgumentException("The import status of the provided item is not known");
             }
 
-            decimal rate = 0;
+            decimal amount = 0;
             // If the item is not exempt, apply the basic tax to it
             if (!ExemptGoods.Contains(item.Type))
             {
-                rate += configurationService.GetBasicTaxRate();
+                amount += ApplyTaxRate(item, configurationService.GetBasicTaxRate());
             }
 
             // If the item is imported, apply the import tax to it (on top of the basic tax)
             if (item.ImportStatus == ImportStatus.Imported)
             {
-                rate += configurationService.GetImportedTaxRate();
+                amount += ApplyTaxRate(item, configurationService.GetImportedTaxRate());
             }
 
-            return rate;
+            return amount;
+        }
+
+        public decimal ApplyTaxRate(GoodsItem item, decimal taxRate)
+        {
+            decimal d = taxRate * item.PriceBeforeTax;
+            decimal remainderToClosest = d % 0.05M;
+            return Math.Round(
+                (remainderToClosest < 0.025M) ? (d - remainderToClosest) : (d + 0.05M - remainderToClosest), 
+                2, 
+                MidpointRounding.AwayFromZero);
         }
 
         public TaxedGoodsItem ConvertToTaxedItem(GoodsItem item)
@@ -39,7 +49,7 @@ namespace BlazorApp.Services
                 ImportStatus = item.ImportStatus,
                 PriceBeforeTax = item.PriceBeforeTax
             };
-            taxedItem.TaxRateApplied = CalculateTaxRate(item);
+            taxedItem.TaxAmountApplied = CalculateTaxAmount(item);
 
             return taxedItem;
         }

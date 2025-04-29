@@ -12,11 +12,11 @@ namespace BlazorApp.Data
         MusicCD,
         [Display(Name = "Chocolate Bar")]
         ChocolateBar,
-        [Display(Name = "Chocolate Box")]
+        [Display(Name = "Box of chocolates")]
         ChocolateBox,
         [Display(Name = "Bottle of Perfume")]
         BottleOfPerfume,
-        [Display(Name = "Paracetamol")]
+        [Display(Name = "Packet of paracetamol")]
         Paracetamol,
     }
 }

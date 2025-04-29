@@ -12,8 +12,8 @@ namespace SalesTaxTest
             Mock<IConfigurationService> configService = SetupConfig();
             var taxCalculator = new TaxCalculatorService(configService.Object);
             
-            var item = new GoodsItem() { Type = ItemType.Book, ImportStatus = ImportStatus.Imported };
-            Assert.Equal(taxCalculator.CalculateTaxRate(item), configService.Object.GetImportedTaxRate());
+            var item = new GoodsItem() { Type = ItemType.Book, ImportStatus = ImportStatus.Imported, PriceBeforeTax = 1 };
+            Assert.Equal(taxCalculator.CalculateTaxAmount(item), configService.Object.GetImportedTaxRate());
         }
 
         private static Mock<IConfigurationService> SetupConfig()
